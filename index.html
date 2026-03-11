@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EduLib — College Library System</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --ink: #0d0d0d;
+    --cream: #f5f0e8;
+    --gold: #c9a84c;
+    --rust: #8b3a2a;
+    --sage: #4a6741;
+    --paper: #faf7f2;
+    --muted: #7a7265;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* Custom cursor */
+  .cursor {
+    width: 10px; height: 10px;
+    background: var(--gold);
+    border-radius: 50%;
+    position: fixed; top: 0; left: 0;
+    pointer-events: none; z-index: 9999;
+    transition: transform 0.1s;
+  }
+  .cursor-ring {
+    width: 36px; height: 36px;
+    border: 1.5px solid var(--gold);
+    border-radius: 50%;
+    position: fixed; top: 0; left: 0;
+    pointer-events: none; z-index: 9998;
+    transition: all 0.15s ease;
+    opacity: 0.6;
+  }
+
+  /* Noise overlay */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0; opacity: 0.4;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; width: 100%; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.4rem 4rem;
+    background: rgba(245,240,232,0.88);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(201,168,76,0.2);
+  }
+
+  .nav-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem; font-weight: 900;
+    letter-spacing: -0.5px;
+    color: var(--ink);
+  }
+  .nav-logo span { color: var(--gold); }
+
+  .nav-links { display: flex; gap: 2.5rem; list-style: none; }
+  .nav-links a {
+    text-decoration: none; color: var(--muted);
+    font-size: 0.88rem; font-weight: 500;
+    letter-spacing: 0.04em; text-transform: uppercase;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--ink); }
+
+  .nav-cta {
+    display: flex; gap: 1rem;
+  }
+  .btn-outline {
+    padding: 0.55rem 1.4rem;
+    border: 1.5px solid var(--ink);
+    background: transparent;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem; font-weight: 500;
+    cursor: none; border-radius: 2px;
+    transition: all 0.25s;
+    text-decoration: none; color: var(--ink);
+  }
+  .btn-outline:hover { background: var(--ink); color: var(--cream); }
+
+  .btn-fill {
+    padding: 0.55rem 1.4rem;
+    background: var(--gold);
+    border: 1.5px solid var(--gold);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem; font-weight: 500;
+    cursor: none; border-radius: 2px;
+    transition: all 0.25s;
+    text-decoration: none; color: var(--ink);
+  }
+  .btn-fill:hover { background: #b8973e; border-color: #b8973e; }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding-top: 5rem;
+    position: relative;
+  }
+
+  .hero-left {
+    display: flex; flex-direction: column;
+    justify-content: center;
+    padding: 6rem 4rem 6rem 6rem;
+    position: relative; z-index: 1;
+  }
+
+  .hero-eyebrow {
+    font-size: 0.78rem; font-weight: 500;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 1.5rem;
+    opacity: 0; animation: fadeUp 0.8s 0.2s forwards;
+  }
+
+  .hero-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(3rem, 5vw, 5.2rem);
+    font-weight: 900; line-height: 1.04;
+    letter-spacing: -2px;
+    margin-bottom: 1.8rem;
+    opacity: 0; animation: fadeUp 0.8s 0.35s forwards;
+  }
+  .hero-title em { color: var(--rust); font-style: italic; }
+
+  .hero-sub {
+    font-size: 1.05rem; color: var(--muted);
+    line-height: 1.7; max-width: 420px;
+    margin-bottom: 3rem;
+    font-weight: 300;
+    opacity: 0; animation: fadeUp 0.8s 0.5s forwards;
+  }
+
+  .hero-actions {
+    display: flex; gap: 1.2rem; align-items: center;
+    opacity: 0; animation: fadeUp 0.8s 0.65s forwards;
+  }
+
+  .btn-primary {
+    padding: 1rem 2.5rem;
+    background: var(--ink);
+    color: var(--cream);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem; font-weight: 500;
+    border: none; border-radius: 2px;
+    cursor: none; text-decoration: none;
+    transition: all 0.25s;
+    display: inline-block;
+  }
+  .btn-primary:hover { background: var(--rust); transform: translateY(-2px); }
+
+  .btn-ghost {
+    font-size: 0.88rem; color: var(--muted);
+    text-decoration: none; font-weight: 400;
+    display: flex; align-items: center; gap: 0.5rem;
+    transition: color 0.2s;
+  }
+  .btn-ghost:hover { color: var(--ink); }
+  .btn-ghost::after { content: '→'; transition: transform 0.2s; }
+  .btn-ghost:hover::after { transform: translateX(4px); }
+
+  .hero-stats {
+    margin-top: 4rem;
+    display: flex; gap: 3rem;
+    opacity: 0; animation: fadeUp 0.8s 0.8s forwards;
+  }
+  .stat-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem; font-weight: 700; color: var(--ink);
+  }
+  .stat-label {
+    font-size: 0.78rem; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.1em;
+    margin-top: 0.2rem;
+  }
+
+  /* Hero Right - Decorative */
+  .hero-right {
+    position: relative;
+    overflow: hidden;
+    background: var(--ink);
+    opacity: 0; animation: fadeIn 1s 0.4s forwards;
+  }
+
+  .hero-right::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 50%, #1e1208 100%);
+  }
+
+  .book-grid {
+    position: absolute; inset: 0;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    gap: 3px; padding: 3px;
+    opacity: 0.35;
+  }
+
+  .book-spine {
+    border-radius: 1px;
+    animation: shimmer 3s infinite alternate;
+  }
+
+  @keyframes shimmer {
+    0% { opacity: 0.3; }
+    100% { opacity: 0.7; }
+  }
+
+  .hero-right-content {
+    position: relative; z-index: 2;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    height: 100%; padding: 4rem;
+    text-align: center;
+  }
+
+  .hero-badge {
+    width: 160px; height: 160px;
+    border: 1.5px solid rgba(201,168,76,0.5);
+    border-radius: 50%;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    margin-bottom: 2rem;
+    animation: rotateBadge 20s linear infinite;
+    position: relative;
+  }
+
+  .hero-badge-inner {
+    font-family: 'Playfair Display', serif;
+    font-size: 3.5rem; color: var(--gold);
+  }
+
+  .hero-badge-text {
+    font-size: 0.72rem; color: rgba(201,168,76,0.7);
+    letter-spacing: 0.2em; text-transform: uppercase;
+    margin-top: 0.3rem;
+  }
+
+  @keyframes rotateBadge {
+    from { box-shadow: 0 0 0 0 rgba(201,168,76,0.1); }
+    50% { box-shadow: 0 0 60px 20px rgba(201,168,76,0.08); }
+    to { box-shadow: 0 0 0 0 rgba(201,168,76,0.1); }
+  }
+
+  .hero-quote {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem; color: var(--cream);
+    font-style: italic; line-height: 1.5;
+    max-width: 280px; opacity: 0.8;
+  }
+
+  .hero-quote-author {
+    font-size: 0.78rem; color: var(--gold);
+    letter-spacing: 0.1em; text-transform: uppercase;
+    margin-top: 1rem;
+  }
+
+  /* FEATURES */
+  .features {
+    padding: 7rem 6rem;
+    position: relative; z-index: 1;
+  }
+
+  .section-label {
+    font-size: 0.78rem; font-weight: 500;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 1rem;
+  }
+
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 3.5vw, 3rem);
+    font-weight: 700; line-height: 1.15;
+    max-width: 480px; margin-bottom: 4rem;
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    background: rgba(201,168,76,0.1);
+    border: 1px solid rgba(201,168,76,0.15);
+  }
+
+  .feature-card {
+    background: var(--paper);
+    padding: 2.5rem;
+    transition: background 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .feature-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0;
+    width: 3px; height: 0;
+    background: var(--gold);
+    transition: height 0.3s;
+  }
+
+  .feature-card:hover { background: var(--cream); }
+  .feature-card:hover::before { height: 100%; }
+
+  .feature-icon {
+    font-size: 2rem; margin-bottom: 1.2rem;
+  }
+
+  .feature-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.15rem; font-weight: 700;
+    margin-bottom: 0.8rem;
+  }
+
+  .feature-desc {
+    font-size: 0.88rem; color: var(--muted);
+    line-height: 1.7;
+  }
+
+  /* ABOUT STRIP */
+  .about-strip {
+    background: var(--ink);
+    padding: 5rem 6rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6rem; align-items: center;
+    position: relative; z-index: 1;
+  }
+
+  .about-strip h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.8rem, 3vw, 2.8rem);
+    color: var(--cream); line-height: 1.2;
+    font-weight: 700;
+  }
+
+  .about-strip h2 span { color: var(--gold); font-style: italic; }
+
+  .about-strip p {
+    color: rgba(245,240,232,0.6);
+    font-size: 0.95rem; line-height: 1.8;
+    margin-bottom: 2rem;
+  }
+
+  .about-strip .btn-gold {
+    padding: 0.9rem 2rem;
+    background: var(--gold);
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem; font-weight: 500;
+    border: none; border-radius: 2px;
+    cursor: none; text-decoration: none;
+    display: inline-block; transition: all 0.25s;
+  }
+  .about-strip .btn-gold:hover { background: #b8973e; transform: translateY(-2px); }
+
+  .about-list {
+    list-style: none;
+    display: flex; flex-direction: column; gap: 1.2rem;
+  }
+
+  .about-list li {
+    display: flex; align-items: flex-start; gap: 1rem;
+    color: rgba(245,240,232,0.75);
+    font-size: 0.9rem; line-height: 1.5;
+  }
+
+  .about-list li::before {
+    content: '◆';
+    color: var(--gold); font-size: 0.5rem;
+    margin-top: 0.4rem; flex-shrink: 0;
+  }
+
+  /* FOOTER */
+  footer {
+    background: #080808;
+    padding: 3rem 6rem;
+    display: flex; justify-content: space-between; align-items: center;
+    border-top: 1px solid rgba(201,168,76,0.15);
+    position: relative; z-index: 1;
+  }
+
+  footer .logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem; font-weight: 900;
+    color: var(--cream);
+  }
+  footer .logo span { color: var(--gold); }
+
+  footer p {
+    font-size: 0.8rem; color: rgba(245,240,232,0.3);
+  }
+
+  footer .footer-links {
+    display: flex; gap: 2rem; list-style: none;
+  }
+  footer .footer-links a {
+    font-size: 0.8rem; color: rgba(245,240,232,0.4);
+    text-decoration: none; transition: color 0.2s;
+  }
+  footer .footer-links a:hover { color: var(--gold); }
+
+  /* ANIMATIONS */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* Horizontal marquee */
+  .marquee-wrap {
+    overflow: hidden;
+    border-top: 1px solid rgba(201,168,76,0.2);
+    border-bottom: 1px solid rgba(201,168,76,0.2);
+    padding: 1rem 0;
+    background: var(--cream);
+    position: relative; z-index: 1;
+  }
+
+  .marquee-track {
+    display: flex; gap: 4rem;
+    animation: marquee 20s linear infinite;
+    white-space: nowrap;
+  }
+
+  .marquee-item {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.9rem; color: var(--muted);
+    display: flex; align-items: center; gap: 1rem;
+  }
+
+  .marquee-item span { color: var(--gold); }
+
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">Edu<span>Lib</span></div>
+  <ul class="nav-links">
+    <li><a href="#">Home</a></li>
+    <li><a href="#">Catalog</a></li>
+    <li><a href="#">About</a></li>
+    <li><a href="#">Contact</a></li>
+  </ul>
+  <div class="nav-cta">
+    <a href="login.html" class="btn-outline">Sign In</a>
+    <a href="register.html" class="btn-fill">Register</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-left">
+    <p class="hero-eyebrow">✦ College Library Management System</p>
+    <h1 class="hero-title">
+      Knowledge<br/>lives <em>here,</em><br/>always.
+    </h1>
+    <p class="hero-sub">
+      A modern digital library for students and faculty. Discover books, manage borrowings, and track your reading journey — all in one place.
+    </p>
+    <div class="hero-actions">
+      <a href="register.html" class="btn-primary">Get Started</a>
+      <a href="#features" class="btn-ghost">Explore Features</a>
+    </div>
+    <div class="hero-stats">
+      <div>
+        <div class="stat-num">12,000+</div>
+        <div class="stat-label">Books Available</div>
+      </div>
+      <div>
+        <div class="stat-num">3,400+</div>
+        <div class="stat-label">Active Members</div>
+      </div>
+      <div>
+        <div class="stat-num">98%</div>
+        <div class="stat-label">Satisfaction Rate</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-right">
+    <div class="book-grid" id="bookGrid"></div>
+    <div class="hero-right-content">
+      <div class="hero-badge">
+        <div class="hero-badge-inner">📖</div>
+        <div class="hero-badge-text">EduLib 2025</div>
+      </div>
+      <p class="hero-quote">"A library is not a luxury but one of the necessities of life."</p>
+      <p class="hero-quote-author">— Henry Ward Beecher</p>
+    </div>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-wrap">
+  <div class="marquee-track" id="marquee">
+    <span class="marquee-item"><span>✦</span> Search & Discover Books</span>
+    <span class="marquee-item"><span>✦</span> Track Borrowings</span>
+    <span class="marquee-item"><span>✦</span> Manage Fines Online</span>
+    <span class="marquee-item"><span>✦</span> Reserve Books in Advance</span>
+    <span class="marquee-item"><span>✦</span> Admin Dashboard</span>
+    <span class="marquee-item"><span>✦</span> Digital Catalog</span>
+    <span class="marquee-item"><span>✦</span> Search & Discover Books</span>
+    <span class="marquee-item"><span>✦</span> Track Borrowings</span>
+    <span class="marquee-item"><span>✦</span> Manage Fines Online</span>
+    <span class="marquee-item"><span>✦</span> Reserve Books in Advance</span>
+    <span class="marquee-item"><span>✦</span> Admin Dashboard</span>
+    <span class="marquee-item"><span>✦</span> Digital Catalog</span>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <p class="section-label">What we offer</p>
+  <h2 class="section-title">Everything your library needs, digitized.</h2>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">📚</div>
+      <h3 class="feature-title">Book Catalog</h3>
+      <p class="feature-desc">Browse thousands of books by title, author, ISBN, or category. Real-time availability at your fingertips.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔄</div>
+      <h3 class="feature-title">Issue & Return</h3>
+      <p class="feature-desc">Seamless book borrowing and return process with automatic due date tracking and reminders.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">💰</div>
+      <h3 class="feature-title">Fine Management</h3>
+      <p class="feature-desc">Automated fine calculation for overdue books. View and clear dues through your member dashboard.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔖</div>
+      <h3 class="feature-title">Reservations</h3>
+      <p class="feature-desc">Reserve currently borrowed books. Get notified when your requested book becomes available.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📊</div>
+      <h3 class="feature-title">Admin Reports</h3>
+      <p class="feature-desc">Comprehensive reports on inventory, borrowing trends, overdue books, and member activity.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🎓</div>
+      <h3 class="feature-title">Role-Based Access</h3>
+      <p class="feature-desc">Separate dashboards for Admin, Students, and Faculty — each with tailored permissions and limits.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT STRIP -->
+<section class="about-strip">
+  <div>
+    <h2>Built for <span>students,</span> managed by admins.</h2>
+  </div>
+  <div>
+    <p>EduLib streamlines every aspect of library management — from cataloging new arrivals to tracking borrowed books and managing member accounts. Designed as a college miniproject with real-world architecture.</p>
+    <ul class="about-list">
+      <li>Students can borrow up to 3 books; faculty up to 5</li>
+      <li>Default 14-day lending period with ₹2/day overdue fine</li>
+      <li>Members with unpaid fines are restricted from new borrowings</li>
+      <li>Full admin control over books, members & transactions</li>
+    </ul>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="logo">Edu<span>Lib</span></div>
+  <p>© 2025 EduLib — College Library Management System</p>
+  <ul class="footer-links">
+    <li><a href="login.html">Login</a></li>
+    <li><a href="register.html">Register</a></li>
+    <li><a href="#">Help</a></li>
+  </ul>
+</footer>
+
+<script>
+  // Custom cursor
+  const cursor = document.getElementById('cursor');
+  const ring = document.getElementById('cursorRing');
+  let mx = 0, my = 0, rx = 0, ry = 0;
+
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX; my = e.clientY;
+    cursor.style.left = mx - 5 + 'px';
+    cursor.style.top = my - 5 + 'px';
+  });
+
+  function animateRing() {
+    rx += (mx - rx - 18) * 0.12;
+    ry += (my - ry - 18) * 0.12;
+    ring.style.left = rx + 'px';
+    ring.style.top = ry + 'px';
+    requestAnimationFrame(animateRing);
+  }
+  animateRing();
+
+  // Generate book spines
+  const colors = ['#8b3a2a','#4a6741','#c9a84c','#2a4a6b','#6b2a4a','#4a2a6b','#2a6b4a','#6b4a2a'];
+  const grid = document.getElementById('bookGrid');
+  for (let i = 0; i < 48; i++) {
+    const spine = document.createElement('div');
+    spine.className = 'book-spine';
+    spine.style.background = colors[Math.floor(Math.random() * colors.length)];
+    spine.style.animationDelay = Math.random() * 3 + 's';
+    spine.style.animationDuration = (2 + Math.random() * 4) + 's';
+    grid.appendChild(spine);
+  }
+</script>
+</body>
+</html>
